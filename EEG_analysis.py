@@ -6,11 +6,12 @@
 # Gramfort et al. (2014): MNE software for processing MEG and EEG data or
 # see their website: https://mne.tools/0.13/tutorials.html
 
-# Import needed modules
+# import needed modules
 import mne
 import os
 import pathlib
 
+# define paths to current folders
 DIR = pathlib.Path(os.getcwd())
 eeg_DIR = DIR / "data"
 
@@ -21,12 +22,8 @@ raw = mne.io.read_raw_brainvision(eeg_DIR / '20220302_pilot_4l8g2m_trial_1.vhdr'
 # should be removed for further analyis?
 raw.plot()
 
-events = mne.events_from_annotations(raw)
-events = events[0]
-
 # To remove power line noise, we apply a lowpass filter with a 40 Hz cutoff
-raw.filter(None, 40)
-help(raw.filter)  # get info on what the function does
+raw.filter(0.01, 40)
 
 # WARNING: filtering alters the data and can produce artifacts and lead
 # to incorrect conclusions. It is thus important to understand the effect of
@@ -35,10 +32,17 @@ help(raw.filter)  # get info on what the function does
 
 raw.plot()  # plot data again, can you see the difference?
 
-# We will now cut the data into equally long segments arround the stimuli to
+# From the raw data we are going to get the 'events' which are the time points
+# at which a stimulus trigger was recorded.
+
+events = mne.events_from_annotations(raw)[0]
+mne.viz.plot_events(events)
+
+# We will now cut the data into equally long segments around the stimuli to
 # obtain the so-called epochs. For this we need to define some parameters:
-tmin = -0.15
-tmax = 1.35
+
+tmin = -0.2
+tmax = 0.5
 reject_criteria = dict(eeg=200e-6)
 flat_criteria = dict(eeg=1e-6)
 event_id = {
@@ -46,7 +50,7 @@ event_id = {
     'tone_2000': 2
 }
 epochs = mne.Epochs(raw, events, event_id, tmin, tmax, reject=reject_criteria, flat=flat_criteria,
-                    reject_by_annotation=True, baseline=False, preload=True)
+                    reject_by_annotation=True, preload=True)
 
 # We can now average over the epochs to obtain the ERP (= event-related potential).
 # This is what we will work with in the next section.
@@ -71,10 +75,12 @@ epochs.average().plot()
 # Assignment 1: plot the epoch average with different filter configurations,
 # epoch intervals (tmin / tmax) and baseline intervals
 
-evoked_tone = epochs['tone'].average()
+evoked_tone_500 = epochs['tone_500'].average()
+evoked_tone_2000 = epochs['tone_2000'].average()
 
 mne.viz.plot_compare_evokeds([
-    evoked_tone
+    evoked_tone_500,
+    evoked_tone_2000
     ],
     title='Average evoked responses'
 )

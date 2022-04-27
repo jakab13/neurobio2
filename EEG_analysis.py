@@ -8,11 +8,10 @@
 
 # import needed modules
 import mne
-import os
 import pathlib
 
 # define paths to current folders
-DIR = pathlib.Path(os.getcwd())
+DIR = pathlib.Path.cwd()
 eeg_DIR = DIR / "data"
 
 # load raw data

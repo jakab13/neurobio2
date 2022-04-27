@@ -14,7 +14,7 @@ import pathlib
 DIR = pathlib.Path.cwd()
 eeg_DIR = DIR / "data"
 
-raw = mne.io.read_raw_brainvision(eeg_DIR / '20220302_pilot_4l8g2m_trial_1.vhdr', preload=True)
+raw = mne.io.read_raw_brainvision(eeg_DIR / 'ew001_L.vhdr', preload=True)
 
 # plot  and inspect raw data. Are there any data segments that
 # should be removed for further analyis?
@@ -87,10 +87,29 @@ event_id = {
     'tone_2000': 2
 }
 epochs = mne.Epochs(raw, events, event_id, tmin, tmax, reject=reject_criteria, flat=flat_criteria,
-                    reject_by_annotation=True, preload=True)
+                    reject_by_annotation=True, preload=True, baseline=None)
+
+# However, this does not look right. There are big differences in the channels' baseline
+# which overshadows the actual ERP. We can circumvent this by setting a channel-
+# specific baseline. To do this we select a certain interval in the Epoch. For
+# each channel, the mean of that interval will be subtracted from the rest of
+# the epoch.
+
+baseline = (-0.2, 0)
+epochs.apply_baseline(baseline)
+epochs.average().plot()
+
+# The baseline can also be given as an argument when computing the epochs but
+# we did not do this here for educational reasons.
+
+# Now you can play with the parameters (start, stop and baseline) and see how
+# the evoked response changes. For example: Try choosing an interval that
+# contains more than one stimulus. Try using an interval with strong stimulus
+# related activity as baseline.
 
 # We can now average over the epochs to obtain the ERP (= event-related potential).
 # This is what we will work with in the next section.
+
 # Select certain intervals in the joint plot and look at the topography. Does it look
 # as expected? Where do we expect electric activity on the scalp to be highest for
 # auditory evoked potentials?
@@ -114,27 +133,14 @@ epochs.set_eeg_reference(ref_channels=reference)
 
 epochs.average().plot_joint()
 
-# However, this does not look right. There are big differences in the channels' baseline
-# which overshadows the actual ERP. We can circumvent this by setting a channel-
-# specific baseline. To do this we select a certain interval in the Epoch. For
-# each channel, the mean of that interval will be subtracted from the rest of
-# the epoch.
-baseline = (-0.2, 0)
-epochs.apply_baseline(baseline)
-epochs.average().plot()
-# The baseline can also be given as an argument when computing the epochs but
-# we did not do this here for educational reasons.
-
-# Now you can play with the parameters (start, stop and baseline) and see how
-# the evoked response changes. For example: Try choosing an interval that
-# contains more than one stimulus. Try using an interval with strong stimulus
-# related activity as baseline.
-
-# Assignment 1: plot the epoch average with different filter configurations,
-# epoch intervals (tmin / tmax) and baseline intervals
+# Now that we have done some basic processing on the epoched data, we can extract
+# ERPs for the two different conditions and store them into variables.
 
 evoked_tone_500 = epochs['tone_500'].average()
 evoked_tone_2000 = epochs['tone_2000'].average()
+
+# We can also compare the two ERPs and inspect differences visually. What kind of
+# differences do you see in the ERPs? How could you explain these?
 
 mne.viz.plot_compare_evokeds([
     evoked_tone_500,

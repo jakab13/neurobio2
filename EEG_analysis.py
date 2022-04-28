@@ -149,3 +149,38 @@ mne.viz.plot_compare_evokeds([
     ],
     title='Average evoked responses'
 )
+
+
+# addition from thursday
+# to concatenate epochs from different conditions
+
+tmin = -0.2
+tmax = 0.5
+reject_criteria = dict(eeg=200e-6)
+flat_criteria = dict(eeg=1e-6)
+
+raw_L = mne.io.read_raw_brainvision(eeg_DIR / 'ew003_L.vhdr', preload=True)
+# raw_L_2 = mne.io.read_raw_brainvision(eeg_DIR / 'ew002_L.vhdr', preload=True)
+# raw_L = mne.concatenate_raws([raw_L_1, raw_L_2])
+raw_R = mne.io.read_raw_brainvision(eeg_DIR / 'ew004_R.vhdr', preload=True)
+raw_R.filter(0.01, 40)
+raw_L.filter(0.01, 40)
+
+# dont forget to filter etc..
+
+events_R = mne.events_from_annotations(raw_R)[0]
+event_id_R = {'R_500': 1, 'R_2000': 2}
+epochs_R = mne.Epochs(raw_R, events_R, event_id_R, tmin, tmax, reject=reject_criteria, flat=flat_criteria,
+                    reject_by_annotation=True, preload=True)
+
+events_L = mne.events_from_annotations(raw_L)[0]
+event_id_L = {'L_500': 1, 'L_2000': 2}
+epochs_L = mne.Epochs(raw_L, events_L, event_id_L, tmin, tmax, reject=reject_criteria, flat=flat_criteria,
+                    reject_by_annotation=True, preload=True)
+
+# combine left and right epochs to get a new epochs object
+LR_epochs = mne.concatenate_epochs([epochs_R, epochs_L])
+
+# if you want to get all the epochs of a specific event:
+# left_epochs = LR_epochs['L_500', 'L_2000']
+# left_epochs.plot(title='left tone')

@@ -9,10 +9,11 @@
 # import needed modules
 import mne
 import pathlib
+from pprint import pprint
 
 # define paths to current folders
 DIR = pathlib.Path.cwd()
-eeg_DIR = DIR / "data"
+eeg_DIR = DIR / "EEG_pilot_data"
 
 raw = mne.io.read_raw_brainvision(eeg_DIR / 'ew001_L.vhdr', preload=True)
 
@@ -34,7 +35,7 @@ raw.plot()  # plot data again, can you see the difference?
 # uses electrode names that give information about their position on the scalp
 # (Cz, TP10, ...).
 
-raw.info["chs"]
+pprint(raw.info["chs"])
 
 # In order to change the mapping name, we need a dictionary that
 # transforms the numbers 1 - 64 into corresponding naming conventions.
@@ -57,7 +58,7 @@ raw.rename_channels(mapping)
 
 # Look at the channel names again, can you see the difference?
 
-raw.info["chs"]
+pprint(raw.info["chs"])
 
 # We further need the information of relative electrodes positions on the scalp to
 # plot topographies and sensor positions on the scalp. The BrainVision company has

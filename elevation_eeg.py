@@ -2,13 +2,12 @@ import slab
 import freefield
 import numpy as np
 
-
 # initializing
 freefield.initialize(setup='dome', default='play_rec')
 
-
 # stimulus generation
 stim = slab.Sound.pinknoise(duration=0.1)
+stim = stim.ramp(when='both', duration=0.1)
 silence = slab.Sound.silence(duration=0.5)
 sound_seq = slab.Sound.sequence(stim, silence)
 
@@ -36,17 +35,13 @@ for trial in trials:
         freefield.set_signal_and_speaker(signal=sound_seq, speaker=23, equalize=False)
 
     freefield.play()
-        # play from 0,0
-
+    freefield.wait_to_finish_playing()
 
 
 # stimulus: pinknoise
 # duration: 100 ms
-
 # isi: 500 ms
-
 # probability: standard: 0.8,  4X deviant: 0.05
-
 # n_trials: 1500
 
 # azimuthal angles: +/- 30°

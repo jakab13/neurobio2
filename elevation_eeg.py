@@ -26,7 +26,6 @@ if np.min(np.diff([i for i, e in enumerate(trial_seq.trials) if e == 0])) < 2:
 else:
     for trial in trial_seq:
         i += 1  # introduce counting variable
-        deviant = None
         if trial == 0:  # deviant trial
             deviant = np.random.randint(0,4) # randomly select one out of 4 deviants from uniform distribution
             if deviant == 0:
@@ -53,11 +52,13 @@ else:
             freefield.wait_for_button()
     print('Block complete :)')
 
+
 # stimulus: pinknoise
 # duration: 100 ms
 # isi: 500 ms
 # probability: standard: 0.8,  4X deviant: 0.05
-# n_trials: 1500
+# trials per block: 600
 # standard stim: 0° az, 0° ele
-# azimuthal angles: +/- 30°
-# elevation angles: +/- 30°
+# 4 deviant stims:
+# azimuthal angles: +/- 37.5°
+# elevation angles: +/- 35°

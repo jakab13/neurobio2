@@ -4,11 +4,11 @@ import mne
 import pathlib
 # define paths to current folders
 DIR = pathlib.Path.cwd()
-eeg_DIR = DIR / "data"
+eeg_DIR = DIR / 'elevation' / "data"
 
 """ prepare data """
 # load eeg recordings:
-raw = mne.io.read_raw_brainvision(eeg_DIR / 'ew001_L.vhdr', preload=True)
+raw = mne.io.read_raw_brainvision(eeg_DIR / 'vanessa_1.vhdr', preload=True)
 
 # rename channels
 raw.info["chs"]
@@ -29,22 +29,23 @@ raw.rename_channels(mapping)
 montage_path = DIR / "AS-96_REF.bvef"
 montage = mne.channels.read_custom_montage(fname=montage_path)
 raw.set_montage(montage)
+raw.plot_sensors(kind='topomap')
 raw.info["dig"]  # coordinates of points on the surface of the subjects head
 
-
 """ filter and epoch data """
-# filter
-raw.filter() # carefully select filter parameters to remove only power line noise and slow drifts
+# bandpass filter raw data
+raw.filter(l_freq=0.5, h_freq=40)
 
-# segmentation into epochs
-tmin =  # start of the epoch (relative to the stimulus)
-tmax =  # end of the epoch
 events = mne.events_from_annotations(raw)[0] # load events
-event_id = dict(up=, down=, left=, right=, front=)  # assign event id's to the trigger numbers
+event_id = dict(up=1, down=2, left=3, right=4, front=5)  # assign event id's to the trigger numbers
+mne.viz.plot_events(events)
+tmin = -0.2
+tmax = +0.4
 epochs = mne.Epochs(raw, events, event_id, tmin, tmax, baseline=None, preload=True)  # get epochs
+epochs.plot()
 
 """ I. baseline correction """
-baseline = ()
+baseline = (tmin, 0)
 epochs.apply_baseline(baseline)
 
 # II. Rejection of bad channels and segments
@@ -58,30 +59,24 @@ raw.info['bads'] += [] # add names of channels here to mark them as "bad"; e.g. 
 
 # Alternatively, you can also check for bad channels in the epoched data and indicate them there:
 epochs.average().plot()
-epochs.info['bads'] += []
-
+epochs.info['bads'] += ['FC2']
 # A possibility to "repair" a bad channel is to interpolate its signal based on the information
 # from the other channels. This can be done with this command:
-# raw_interpol = raw.copy().interpolate_bads()
+raw.interpolate_bads()
 
 # On the other hand, there might be specific epochs that we should exclude (for example, due to
 # extensive movement artifacts). This we can do manually when inspecting the data:
-epochs.plot() # click on the epochs to mark them as "bad"
+epochs.plot()  # click on the epochs to mark them as "bad"
 
 # ...or automatically by selecting certain signal amplitude threshold criteria for the different types of data:
-reject_criteria = dict(eeg=200e-6,       # 200 µV
-                       eog=300e-6)       # 300 µV
+reject_criteria = dict(eeg=10-6)       # 200 µV
 flat_criteria = dict(eeg=1e-6)           # 1 µV
-# Note that these values are very liberal here.
 
-epochs_auto = mne.Epochs(raw, events, event_id, tmin=-0.7, tmax=0.7,
+# Note that these values are very liberal here.
+epochs_auto = mne.Epochs(raw, events, event_id, tmin=tmin, tmax=tmax,
                     reject=reject_criteria, flat=flat_criteria,
                     reject_by_annotation=False, preload=True) # this is the same command for extracting epochs as used above
 epochs_auto.plot_drop_log() # summary of rejected epochs per channel
-
-
-
-
 
 # Another completely automatized way of dealing with these artifacts is
 # the AutoReject pipeline: The data is split into a train and test set.

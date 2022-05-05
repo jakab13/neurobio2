@@ -1,66 +1,60 @@
-#### EEG data processing with MNE Python - example script (EEG Practical Neuro 2, SS2020) ####
-# Authors: Ole Bialas & Tilman Stephani
-
-# DAY 2: rejection of bad channels and epochs; ICA
-
-# For a guide on installing python and mne see:
-# https://mne.tools/stable/install/mne_python.html
-# For a detailed description of MNE-python you can read the paper
-# Gramfort et al. (2014): MNE software for processing MEG and EEG data or
-# see their website: https://mne.tools/0.13/tutorials.html
-
-
+#### EEG data processing with MNE Python - example script (EEG Practical Neuro 2, SS 2022) ####
 # Import needed modules
 import mne
+import pathlib
+# define paths to current folders
+DIR = pathlib.Path.cwd()
+eeg_DIR = DIR / "data"
 
-# get the example data:
-data_path = mne.datasets.sample.data_path(verbose=True)
-raw = mne.io.read_raw_fif(data_path+'/MEG/sample/sample_audvis_raw.fif', preload=True)
-events = mne.read_events(data_path+'/MEG/sample/sample_audvis_raw-eve.fif')
+""" prepare data """
+# load eeg recordings:
+raw = mne.io.read_raw_brainvision(eeg_DIR / 'ew001_L.vhdr', preload=True)
+
+# rename channels
+raw.info["chs"]
+mapping = {"1": "Fp1", "2": "Fp2", "3": "F7", "4": "F3", "5": "Fz", "6": "F4",
+           "7": "F8", "8": "FC5", "9": "FC1", "10": "FC2", "11": "FC6",
+           "12": "T7", "13": "C3", "14": "Cz", "15": "C4", "16": "T8", "17": "TP9",
+           "18": "CP5", "19": "CP1", "20": "CP2", "21": "CP6", "22": "TP10",
+           "23": "P7", "24": "P3", "25": "Pz", "26": "P4", "27": "P8", "28": "PO9",
+           "29": "O1", "30": "Oz", "31": "O2", "32": "PO10", "33": "AF7", "34": "AF3",
+           "35": "AF4", "36": "AF8", "37": "F5", "38": "F1", "39": "F2", "40": "F6",
+           "41": "FT9", "42": "FT7", "43": "FC3", "44": "FC4", "45": "FT8", "46": "FT10",
+           "47": "C5", "48": "C1", "49": "C2", "50": "C6", "51": "TP7", "52": "CP3",
+           "53": "CPz", "54": "CP4", "55": "TP8", "56": "P5", "57": "P1", "58": "P2",
+           "59": "P6", "60": "PO7", "61": "PO3", "62": "POz", "63": "PO4", "64": "PO8"}
+raw.rename_channels(mapping)
+
+# get sensor positions for topographic analysis
+montage_path = DIR / "AS-96_REF.bvef"
+montage = mne.channels.read_custom_montage(fname=montage_path)
+raw.set_montage(montage)
+raw.info["dig"]  # coordinates of points on the surface of the subjects head
 
 
-## Let´s do all the previous preprocessing steps (as in MNE_example_1.py)
-# select EEG data
-picks = mne.pick_types(raw.info, meg=False, eeg=True, eog=True)
-raw.pick(picks=picks)
-
+""" filter and epoch data """
 # filter
-raw.filter(None, 40)
+raw.filter() # carefully select filter parameters to remove only power line noise and slow drifts
 
 # segmentation into epochs
 tmin =  # start of the epoch (relative to the stimulus)
 tmax =  # end of the epoch
-event_id = dict(up=,down=,left=,right=,front=)  # the stimuli we are interested in
+events = mne.events_from_annotations(raw)[0] # load events
+event_id = dict(up=, down=, left=, right=, front=)  # assign event id's to the trigger numbers
 epochs = mne.Epochs(raw, events, event_id, tmin, tmax, baseline=None, preload=True)  # get epochs
 
-# baseline correction
+""" I. baseline correction """
 baseline = ()
 epochs.apply_baseline(baseline)
 
-# ...let us now continue with further preprocessing of the data. 
-
-
-## Rejection of bad channels and segments
-
-# Ideally, our ERPs would contain only brain activity. However, EEG and MEG
-# sensors are subject to electromagnetic perturbances from all kinds of sources
-# which can cause artifacts that deteriorate the signal quality. In cases where
-# those artifacts are time-locked to the stimulus they might even completely
-# change the ERP. In the following we will deal with two sources, blinks
+# II. Rejection of bad channels and segments
+# In the following we will deal with two sources, blinks
 # and non-physiological artifacts.
-
-# Non-physiological artifacts are created by e.g. electromagnetic interference
-# or mechanical displacement of channels/cables.
-
-# On the one hand, an entire channel can be too noisy for analysis. In this case,
-# one should remove it.
-
 raw.plot() # look at the continuous EEG again and identify channels that either show consistently
 # higher frequencies and higher amplitudes than other channels or no signal at all.
 
 raw.info['bads'] += [] # add names of channels here to mark them as "bad"; e.g. 'EEG 001'
 # Alternatively, you can also click on the channel names in the plot to mark them as "bad".
-# For this data here, it seems we don´t need to remove a channel.
 
 # Alternatively, you can also check for bad channels in the epoched data and indicate them there:
 epochs.average().plot()
@@ -68,7 +62,7 @@ epochs.info['bads'] += []
 
 # A possibility to "repair" a bad channel is to interpolate its signal based on the information
 # from the other channels. This can be done with this command:
-# raw_interpol = raw.copy().interpolate_bads() # but we don´t need it here.
+# raw_interpol = raw.copy().interpolate_bads()
 
 # On the other hand, there might be specific epochs that we should exclude (for example, due to
 # extensive movement artifacts). This we can do manually when inspecting the data:
@@ -85,8 +79,7 @@ epochs_auto = mne.Epochs(raw, events, event_id, tmin=-0.7, tmax=0.7,
                     reject_by_annotation=False, preload=True) # this is the same command for extracting epochs as used above
 epochs_auto.plot_drop_log() # summary of rejected epochs per channel
 
-# --> Task: Play with the parameters indicated by reject_criteria and flat_criteria. Does the number
-# of excluded epochs change?
+
 
 
 

@@ -2,6 +2,7 @@
 # Import needed modules
 import mne
 import pathlib
+import pickle
 # define paths to current folders
 DIR = pathlib.Path.cwd()
 eeg_DIR = DIR / 'elevation' / "data"
@@ -23,7 +24,10 @@ mapping = {"1": "Fp1", "2": "Fp2", "3": "F7", "4": "F3", "5": "Fz", "6": "F4",
            "47": "C5", "48": "C1", "49": "C2", "50": "C6", "51": "TP7", "52": "CP3",
            "53": "CPz", "54": "CP4", "55": "TP8", "56": "P5", "57": "P1", "58": "P2",
            "59": "P6", "60": "PO7", "61": "PO3", "62": "POz", "63": "PO4", "64": "PO8"}
+# with open('channel_mapping.pkl', 'wb') as f:
+#     pickle.dump(mapping, f)  # save mapping to pkl file
 raw.rename_channels(mapping)
+
 
 # get sensor positions for topographic analysis
 montage_path = DIR / "AS-96_REF.bvef"
@@ -62,7 +66,7 @@ epochs.average().plot()
 epochs.info['bads'] += ['FC2']
 # A possibility to "repair" a bad channel is to interpolate its signal based on the information
 # from the other channels. This can be done with this command:
-raw.interpolate_bads()
+epochs.interpolate_bads()
 
 # On the other hand, there might be specific epochs that we should exclude (for example, due to
 # extensive movement artifacts). This we can do manually when inspecting the data:
@@ -76,7 +80,7 @@ flat_criteria = dict(eeg=1e-6)           # 1 µV
 epochs_auto = mne.Epochs(raw, events, event_id, tmin=tmin, tmax=tmax,
                     reject=reject_criteria, flat=flat_criteria,
                     reject_by_annotation=False, preload=True) # this is the same command for extracting epochs as used above
-epochs_auto.plot_drop_log() # summary of rejected epochs per channel
+epochs_auto.plot_drop_log()  # summary of rejected epochs per channel
 
 # Another completely automatized way of dealing with these artifacts is
 # the AutoReject pipeline: The data is split into a train and test set.
@@ -97,14 +101,14 @@ from autoreject import AutoReject # import the module
 ar=AutoReject(n_interpolate=[3,6,12], random_state=42)
 epochs_ar, reject_log = ar.fit_transform(epochs, return_log=True)
 
+
 # Lets have a look at what AutoReject did to the data:
-reject_log.plot_epochs(epochs) # one should carefully check that not too much of the data was removed...
+reject_log.plot_epochs(epochs)  # one should carefully check that not too much of the data was removed...
 
 
 # However for now, let´s continue working with the not-fully automatized rejection approach
 # where we set the threshold manually:
 epochs = epochs_auto
-
 
 
 ## Rejection of signals of no interest using Independent Component Analysis (ICA)

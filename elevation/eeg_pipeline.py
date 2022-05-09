@@ -70,14 +70,15 @@ ica.apply(epochs)  # apply ICA
 # ---- here we might want to save the pre-processed epochs object
 epochs.save(eeg_DIR / 'vanessa-epo.fif', overwrite=True)  # save preprocessed data
 
+# read saved epochs
 epochs = mne.read_epochs(eeg_DIR / 'vanessa-epo.fif', proj=True, preload=True, verbose=None)
+
 
 evoked_front = epochs['front'].average()
 evoked_up = epochs['up'].average()
 evoked_down = epochs['down'].average()
 evoked_left = epochs['left'].average()
 evoked_right = epochs['right'].average()
-
 
 # plot evoked topo
 mne.viz.plot_evoked_topo(evoked_up)
@@ -89,8 +90,6 @@ mne.viz.plot_evoked(evoked_down, picks=['Cz'])
 mne.viz.plot_evoked(evoked_left, picks=['Cz'])
 mne.viz.plot_evoked(evoked_right, picks=['Cz'])
 
-
-
 # create difference waves
 # up - standard
 evoked_diff = mne.combine_evoked([evoked_up, evoked_front], weights=[1, -1])
@@ -98,3 +97,11 @@ evoked_diff.plot_topo(color='b', legend=True)
 # left - standard
 evoked_diff = mne.combine_evoked([evoked_left, evoked_front], weights=[1, -1])
 evoked_diff.plot_topo(color='b', legend=True)
+# right - standard
+evoked_diff = mne.combine_evoked([evoked_right, evoked_front], weights=[1, -1])
+evoked_diff.plot_topo(color='b', legend=True)
+
+# plot evoked pattern on topographic map
+evoked_up.plot_joint()
+evoked_up.plot_topomap(times=[0., 0.08, 0.1, 0.12, 0.2])
+

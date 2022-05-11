@@ -44,14 +44,11 @@ flat_criteria = dict(eeg=2e-6)   # 2 µV
 # (should not remove eye movements and blinks yet)
 raw.info['bads'] += ['FC2', 'FT8']
 raw.interpolate_bads
-
 raw.info['bads'] += ['FCz']  # exclude FCz channel from flat criteria
 epochs = mne.Epochs(raw, events, event_id, tmin=tmin, tmax=tmax,
                     reject=reject_criteria, flat=flat_criteria,
                     reject_by_annotation=False, preload=True)
-epochs.info['bads'].remove('FCz')  # remove FCz
-epochs.info['bads'].remove('FC2')  # remove FCz
-epochs.info['bads'].remove('FT8')  # remove FCz
+raw.info['bads'] = []
 
 epochs.plot_drop_log()
 
